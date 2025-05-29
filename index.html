@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Калькулятор Надійності та Збитків ГПП</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      background: #f0f2f5;
+    }
+    h1, h2 {
+      color: #2c3e50;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      padding: 5px;
+      margin-top: 5px;
+      width: 100%;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background: #ecf0f1;
+      border-left: 5px solid #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Калькулятор Надійності та Збитків ГПП</h1>
+
+  <h2>1. Надійність систем електропередачі</h2>
+  <button onclick="calculateReliability()">Розрахувати надійність</button>
+  <div class="result" id="reliabilityResult"></div>
+
+  <h2>2. Збитки від перерв електропостачання</h2>
+
+  <label>Питома аварійна вартість (грн/кВт·год):
+    <input type="number" id="zPerA" value="23.6">
+  </label>
+  <label>Питома планова вартість (грн/кВт·год):
+    <input type="number" id="zPerP" value="17.6">
+  </label>
+  <label>Частота відмов трансформатора, ω (рік⁻¹):
+    <input type="number" id="omega" value="0.01" step="0.001">
+  </label>
+  <label>Середній час відновлення, t_b (року):
+    <input type="number" id="tb" value="0.045" step="0.001">
+  </label>
+  <label>Потужність трансформатора, P_т (кВт):
+    <input type="number" id="pt" value="5120">
+  </label>
+  <label>Час роботи системи, T_м (год/рік):
+    <input type="number" id="tm" value="6451">
+  </label>
+  <label>Коефіцієнт планового простою, k_п:
+    <input type="number" id="kp" value="0.004" step="0.001">
+  </label>
+
+  <button onclick="calculateLosses()">Розрахувати збитки</button>
+  <div class="result" id="lossResult"></div>
+
+  <script>
+    function calculateReliability() {
+      // Одноланкова
+      const omegaOS = 0.295;
+      const tVOS = 10.7;
+      const kaOS = (omegaOS * tVOS / 8760).toExponential(2);
+      const kpOS = ((1.43 - 0.52) / 8760).toExponential(2);
+
+      // Дволанкова
+      const omegaDS = 2 * 3.6e-4 + 58.9 * 1.0e-4;
+      const omegaDSFull = omegaDS + 0.02;
+
+      const output = `
+        <strong>Одноланкова система:</strong><br>
+        Частота відмов: ${omegaOS.toFixed(3)} рік⁻¹<br>
+        Середня тривалість відновлення: ${tVOS} год<br>
+        Коефіцієнт аварійного простою: ${kaOS}<br>
+        Коефіцієнт планового простою: ${kpOS}<br><br>
+
+        <strong>Дволанкова система:</strong><br>
+        Частота відмов (без секційного вимикача): ${(omegaDS).toExponential(4)} рік⁻¹<br>
+        Частота відмов (з секційним вимикачем): ${(omegaDSFull).toFixed(4)} рік⁻¹<br>
+        <strong>Висновок:</strong> Дволанкова система надійніша.
+      `;
+      document.getElementById('reliabilityResult').innerHTML = output;
+    }
+
+    function calculateLosses() {
+      const zPerA = parseFloat(document.getElementById("zPerA").value);
+      const zPerP = parseFloat(document.getElementById("zPerP").value);
+      const omega = parseFloat(document.getElementById("omega").value);
+      const tb = parseFloat(document.getElementById("tb").value);
+      const pt = parseFloat(document.getElementById("pt").value);
+      const tm = parseFloat(document.getElementById("tm").value);
+      const kp = parseFloat(document.getElementById("kp").value);
+
+      const wA = omega * tb * pt * tm;
+      const wP = kp * pt * tm;
+      const loss = zPerA * wA + zPerP * wP;
+
+      const output = `
+        Математичне сподівання аварійного недовідпущення електроенергії: ${wA.toFixed(0)} кВт·год<br>
+        Математичне сподівання планового недовідпущення електроенергії: ${wP.toFixed(0)} кВт·год<br>
+        <strong>Сумарні збитки:</strong> ${loss.toLocaleString()} грн
+      `;
+      document.getElementById('lossResult').innerHTML = output;
+    }
+  </script>
+</body>
+</html>
