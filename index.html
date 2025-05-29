@@ -42,33 +42,71 @@
 </head>
 <body>
   <h1>Калькулятор Надійності та Збитків</h1>
+
   <h2>Приклад 3.1: Надійність систем електропередачі</h2>
+  <label>ω1 (вимикач 110 кВ):</label><input type="number" id="w1" value="0.01">
+  <label>ω2 (ПЛ-110 кВ):</label><input type="number" id="w2" value="0.07">
+  <label>ω3 (трансформатор):</label><input type="number" id="w3" value="0.015">
+  <label>ω4 (вивід 10 кВ):</label><input type="number" id="w4" value="0.02">
+  <label>ω5 (одне приєднання):</label><input type="number" id="w5" value="0.03">
+  <label>Кількість приєднань:</label><input type="number" id="n" value="6">
+
+  <label>tв1 (вимикач):</label><input type="number" id="tv1" value="0.3">
+  <label>tв2 (ПЛ):</label><input type="number" id="tv2" value="0.1">
+  <label>tв3 (трансформатор):</label><input type="number" id="tv3" value="1.0">
+  <label>tв4 (вивід):</label><input type="number" id="tv4" value="1.5">
+  <label>tв5 (одне приєднання):</label><input type="number" id="tv5" value="2.0">
+
+  <label>kпл.мах:</label><input type="number" id="kpl_max" value="1.43">
+  <label>kа.мах:</label><input type="number" id="ka_max" value="0.52">
+
   <button onclick="calculateReliability()">Розрахувати надійність</button>
   <div class="output" id="reliabilityOutput"></div>
 
   <h2>Приклад 3.2: Збитки від перерв електропостачання</h2>
-  <label>Питома потужність P_т (кВт):</label>
-  <input type="number" id="P_t" value="5120" />
-  <label>Час моделювання T_м (год):</label>
-  <input type="number" id="T_m" value="6451" />
+  <label>Питома потужність P_т (кВт):</label><input type="number" id="P_t" value="5120" />
+  <label>Час моделювання T_м (год):</label><input type="number" id="T_m" value="6451" />
+  <label>ω (частота відмов, рік⁻¹):</label><input type="number" id="w_fail" value="0.01" />
+  <label>t_b (року):</label><input type="number" id="t_b" value="0.045" />
+  <label>k_п (плановий простій):</label><input type="number" id="k_p" value="0.004" />
+  <label>З_пер.а (грн/кВт·год):</label><input type="number" id="Z_per_a" value="23.6" />
+  <label>З_пер.п (грн/кВт·год):</label><input type="number" id="Z_per_p" value="17.6" />
+
   <button onclick="calculateLosses()">Розрахувати збитки</button>
   <div class="output" id="lossOutput"></div>
 
   <script>
     function calculateReliability() {
-      const w_os = 0.295;
-      const t_v_os = (0.3 * 0.01 + 0.07 * 0.10 + 0.015 * 1.00 + 0.02 * 1.5 + 0.018 * 2) / w_os;
-      const k_a_os = (w_os * t_v_os) / 8760;
-      const k_pl_os = (1.43 - 0.52) / 8760;
+      const w1 = parseFloat(document.getElementById('w1').value);
+      const w2 = parseFloat(document.getElementById('w2').value);
+      const w3 = parseFloat(document.getElementById('w3').value);
+      const w4 = parseFloat(document.getElementById('w4').value);
+      const w5 = parseFloat(document.getElementById('w5').value);
+      const n = parseFloat(document.getElementById('n').value);
 
-      const w_ds = 2 * k_a_os + 58.9 * k_pl_os;
+      const w_os = w1 + w2 + w3 + w4 + w5 * n;
+
+      const tv1 = parseFloat(document.getElementById('tv1').value);
+      const tv2 = parseFloat(document.getElementById('tv2').value);
+      const tv3 = parseFloat(document.getElementById('tv3').value);
+      const tv4 = parseFloat(document.getElementById('tv4').value);
+      const tv5 = parseFloat(document.getElementById('tv5').value);
+
+      const tv_os = (tv1 * w1 + tv2 * w2 + tv3 * w3 + tv4 * w4 + tv5 * w5 * n) / w_os;
+      const ka_os = w_os * tv_os / 8760;
+
+      const kpl_max = parseFloat(document.getElementById('kpl_max').value);
+      const ka_max = parseFloat(document.getElementById('ka_max').value);
+
+      const kpl_os = (kpl_max - ka_max) / 8760;
+      const w_ds = 2 * ka_os + 58.9 * kpl_os;
       const w_ds_prime = w_ds + 0.02;
 
       document.getElementById('reliabilityOutput').innerHTML = `
         Частота відмов одноланкової системи: ${w_os.toFixed(3)}<br>
-        Середня тривалість відновлення: ${t_v_os.toFixed(1)} год.<br>
-        Коефіцієнт аварійного простою: ${k_a_os.toExponential(2)}<br>
-        Коефіцієнт планового простою: ${k_pl_os.toExponential(2)}<br>
+        Середня тривалість відновлення: ${tv_os.toFixed(1)} год.<br>
+        Коефіцієнт аварійного простою: ${ka_os.toExponential(2)}<br>
+        Коефіцієнт планового простою: ${kpl_os.toExponential(2)}<br>
         Частота відмов дволанкової системи: ${w_ds.toExponential(2)}<br>
         З урахуванням секц. вимикача: ${w_ds_prime.toFixed(4)} рік⁻¹
       `;
@@ -77,12 +115,11 @@
     function calculateLosses() {
       const P_t = parseFloat(document.getElementById('P_t').value);
       const T_m = parseFloat(document.getElementById('T_m').value);
-      const w = 0.01;
-      const t_b = 45 / 1000;
-      const k_p = 4 / 1000;
-
-      const Z_per_a = 23.6;
-      const Z_per_p = 17.6;
+      const w = parseFloat(document.getElementById('w_fail').value);
+      const t_b = parseFloat(document.getElementById('t_b').value);
+      const k_p = parseFloat(document.getElementById('k_p').value);
+      const Z_per_a = parseFloat(document.getElementById('Z_per_a').value);
+      const Z_per_p = parseFloat(document.getElementById('Z_per_p').value);
 
       const M_W_a = w * t_b * P_t * T_m;
       const M_W_p = k_p * P_t * T_m;
