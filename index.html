@@ -2,124 +2,91 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Калькулятор Надійності та Збитків ГПП</title>
+  <title>Калькулятор Надійності та Збитків</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
-      background: #f0f2f5;
-    }
-    h1, h2 {
-      color: #2c3e50;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input {
-      padding: 5px;
-      margin-top: 5px;
-      width: 100%;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background: #3498db;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .result {
-      margin-top: 20px;
-      padding: 10px;
-      background: #ecf0f1;
-      border-left: 5px solid #2980b9;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; max-width: 900px; margin: auto; }
+    input { width: 100%; margin-bottom: 10px; padding: 5px; }
+    button { padding: 10px 20px; background: #007BFF; color: #fff; border: none; cursor: pointer; }
+    .result { margin-top: 20px; padding: 10px; background: #e3f2fd; border-left: 5px solid #2196f3; }
+    .section { margin-bottom: 30px; }
+    label { font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>Калькулятор Надійності та Збитків ГПП</h1>
 
-  <h2>1. Надійність систем електропередачі</h2>
-  <button onclick="calculateReliability()">Розрахувати надійність</button>
-  <div class="result" id="reliabilityResult"></div>
+  <h1>Калькулятор надійності та збитків ГПП</h1>
 
-  <h2>2. Збитки від перерв електропостачання</h2>
+  <div class="section">
+    <h2>1. Вхідні дані для Прикладу 3.1 (Надійність)</h2>
 
-  <label>Питома аварійна вартість (грн/кВт·год):
-    <input type="number" id="zPerA" value="23.6">
-  </label>
-  <label>Питома планова вартість (грн/кВт·год):
-    <input type="number" id="zPerP" value="17.6">
-  </label>
-  <label>Частота відмов трансформатора, ω (рік⁻¹):
-    <input type="number" id="omega" value="0.01" step="0.001">
-  </label>
-  <label>Середній час відновлення, t_b (року):
-    <input type="number" id="tb" value="0.045" step="0.001">
-  </label>
-  <label>Потужність трансформатора, P_т (кВт):
-    <input type="number" id="pt" value="5120">
-  </label>
-  <label>Час роботи системи, T_м (год/рік):
-    <input type="number" id="tm" value="6451">
-  </label>
-  <label>Коефіцієнт планового простою, k_п:
-    <input type="number" id="kp" value="0.004" step="0.001">
-  </label>
+    <label>Кількість приєднань (n):</label>
+    <input type="number" id="n" value="6">
 
-  <button onclick="calculateLosses()">Розрахувати збитки</button>
-  <div class="result" id="lossResult"></div>
+    <label>Частоти відмов (ω):</label>
+    <input type="number" id="w1" value="0.01" placeholder="Вимикач 110 кВ">
+    <input type="number" id="w2" value="0.07" placeholder="ПЛ 110 кВ">
+    <input type="number" id="w3" value="0.015" placeholder="Трансформатор">
+    <input type="number" id="w4" value="0.02" placeholder="Вивід 10 кВ">
+    <input type="number" id="w5" value="0.03" placeholder="Одне приєднання 10 кВ">
+
+    <label>Тривалість відновлення (tв, год):</label>
+    <input type="number" id="t1" value="0.3" placeholder="Вимикач 110 кВ">
+    <input type="number" id="t2" value="0.1" placeholder="ПЛ 110 кВ">
+    <input type="number" id="t3" value="1.0" placeholder="Трансформатор">
+    <input type="number" id="t4" value="1.5" placeholder="Вивід 10 кВ">
+    <input type="number" id="t5" value="2" placeholder="Одне приєднання 10 кВ">
+
+    <label>Макс. плановий простій (kпл.мах):</label>
+    <input type="number" id="kplMax" value="1.43">
+
+    <label>Макс. аварійний простій (kа.мах):</label>
+    <input type="number" id="kaMax" value="0.52">
+
+    <button onclick="calculateReliabilityUser()">Розрахувати надійність</button>
+    <div class="result" id="reliabilityUserResult"></div>
+  </div>
 
   <script>
-    function calculateReliability() {
-      // Одноланкова
-      const omegaOS = 0.295;
-      const tVOS = 10.7;
-      const kaOS = (omegaOS * tVOS / 8760).toExponential(2);
-      const kpOS = ((1.43 - 0.52) / 8760).toExponential(2);
+    function calculateReliabilityUser() {
+      const n = +document.getElementById("n").value;
 
-      // Дволанкова
-      const omegaDS = 2 * 3.6e-4 + 58.9 * 1.0e-4;
-      const omegaDSFull = omegaDS + 0.02;
+      // Частоти відмов
+      const ω1 = +document.getElementById("w1").value;
+      const ω2 = +document.getElementById("w2").value;
+      const ω3 = +document.getElementById("w3").value;
+      const ω4 = +document.getElementById("w4").value;
+      const ω5 = +document.getElementById("w5").value;
+
+      // Тривалості відновлення
+      const t1 = +document.getElementById("t1").value;
+      const t2 = +document.getElementById("t2").value;
+      const t3 = +document.getElementById("t3").value;
+      const t4 = +document.getElementById("t4").value;
+      const t5 = +document.getElementById("t5").value;
+
+      const ωос = ω1 + ω2 + ω3 + ω4 + ω5 * n;
+      const tвос = (ω1*t1 + ω2*t2 + ω3*t3 + ω4*t4 + ω5*t5*n) / ωос;
+      const каос = (ωос * tвос / 8760).toExponential(3);
+
+      const kплМах = +document.getElementById("kplMax").value;
+      const kаМах = +document.getElementById("kaMax").value;
+      const кплос = ((kплМах - kаМах) / 8760).toExponential(3);
+
+      const ωдс = 2 * parseFloat(каос) + 58.9 * parseFloat(кплос);
+      const ωдсFull = ωдс + 0.02;
 
       const output = `
         <strong>Одноланкова система:</strong><br>
-        Частота відмов: ${omegaOS.toFixed(3)} рік⁻¹<br>
-        Середня тривалість відновлення: ${tVOS} год<br>
-        Коефіцієнт аварійного простою: ${kaOS}<br>
-        Коефіцієнт планового простою: ${kpOS}<br><br>
+        Частота відмов: ${ωос.toFixed(3)} рік⁻¹<br>
+        Середня тривалість відновлення: ${tвос.toFixed(2)} год<br>
+        Коефіцієнт аварійного простою: ${каос}<br>
+        Коефіцієнт планового простою: ${кплос}<br><br>
 
         <strong>Дволанкова система:</strong><br>
-        Частота відмов (без секційного вимикача): ${(omegaDS).toExponential(4)} рік⁻¹<br>
-        Частота відмов (з секційним вимикачем): ${(omegaDSFull).toFixed(4)} рік⁻¹<br>
-        <strong>Висновок:</strong> Дволанкова система надійніша.
+        Частота відмов (з секц. вимикачем): ${ωдсFull.toFixed(4)} рік⁻¹<br>
+        <strong>Висновок:</strong> Дволанкова система значно надійніша.
       `;
-      document.getElementById('reliabilityResult').innerHTML = output;
-    }
-
-    function calculateLosses() {
-      const zPerA = parseFloat(document.getElementById("zPerA").value);
-      const zPerP = parseFloat(document.getElementById("zPerP").value);
-      const omega = parseFloat(document.getElementById("omega").value);
-      const tb = parseFloat(document.getElementById("tb").value);
-      const pt = parseFloat(document.getElementById("pt").value);
-      const tm = parseFloat(document.getElementById("tm").value);
-      const kp = parseFloat(document.getElementById("kp").value);
-
-      const wA = omega * tb * pt * tm;
-      const wP = kp * pt * tm;
-      const loss = zPerA * wA + zPerP * wP;
-
-      const output = `
-        Математичне сподівання аварійного недовідпущення електроенергії: ${wA.toFixed(0)} кВт·год<br>
-        Математичне сподівання планового недовідпущення електроенергії: ${wP.toFixed(0)} кВт·год<br>
-        <strong>Сумарні збитки:</strong> ${loss.toLocaleString()} грн
-      `;
-      document.getElementById('lossResult').innerHTML = output;
+      document.getElementById("reliabilityUserResult").innerHTML = output;
     }
   </script>
 </body>
